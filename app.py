@@ -12,7 +12,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 
 # URL do servidor LLaMA local
-LLAMA_URL = "http://141.148.138.218:8081/completion"
+LLAMA_URL = "http://141.148.138.218:8082/completion"
 
 def chat_com_llama_local(messages):
     """Chama o modelo LLaMA local via API"""
