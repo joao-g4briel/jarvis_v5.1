@@ -24,7 +24,7 @@ def chat_com_llama_local(messages):
     
     payload = {
         "prompt": prompt,
-        "n_predict": 512,
+        "n_predict": 256,
         "temperature": 0.7
     }
     
