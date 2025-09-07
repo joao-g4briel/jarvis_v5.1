@@ -29,7 +29,7 @@ def chat_com_llama_local(messages):
     }
     
     try:
-        response = requests.post(LLAMA_URL, headers=headers, json=payload, timeout=300)
+        response = requests.post(LLAMA_URL, headers=headers, json=payload, timeout=600)
         response.raise_for_status()
         return response.json()["content"]
     except requests.exceptions.ConnectionError as e:
