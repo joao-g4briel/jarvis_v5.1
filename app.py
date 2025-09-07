@@ -1,42 +1,50 @@
+import requests
+import json
 from flask import Flask, render_template, request, jsonify
 from models import db, Chat
-from config import DATABASE_URL, OPENROUTER_API_KEY
-import requests
-import os
+from config import DATABASE_URL
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Inicializar banco
 db.init_app(app)
 
-def chat_com_openrouter(messages):
-    """Função para se comunicar com a API do OpenRouter"""
+# URL do servidor LLaMA local (substitua pelo IP real da sua VPS)
+LLAMA_URL = "http://141.148.138.218:8081/completion"
+
+def chat_com_llama_local(messages):
+    """Chama o modelo LLaMA local via API"""
+    prompt = formatar_prompt_mistral(messages)
+    
+    headers = {
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "prompt": prompt,
+        "n_predict": 512,
+        "temperature": 0.7
+    }
+    
     try:
-        headers = {
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://jarvis-chatbot.coolify.app",  # Substitua pela URL real do seu app
-            "X-Title": "Jarvis Chatbot"
-        }
-        
-        payload = {
-            "model": "deepseek/deepseek-chat-v3.1:free",
-            "messages": messages
-        }
-        
-        response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=60
-        )
-        
+        response = requests.post(LLAMA_URL, headers=headers, json=payload, timeout=120)
         response.raise_for_status()
-        return response.json()["choices"][0]["message"]["content"].strip()
+        return response.json()["content"]
     except Exception as e:
-        return f"Erro na API: {str(e)}"
+        return f"Erro ao chamar LLaMA local: {str(e)}"
+
+def formatar_prompt_mistral(messages):
+    """Formata mensagens no formato do Mistral"""
+    prompt = ""
+    for msg in messages:
+        if msg["role"] == "system":
+            prompt += f"{msg['content']}\n"
+        elif msg["role"] == "user":
+            prompt += f"[INST] {msg['content']} [/INST]\n"
+        elif msg["role"] == "assistant":
+            prompt += f"{msg['content']}\n"
+    return prompt
 
 @app.route("/")
 def index():
@@ -58,11 +66,8 @@ def chat():
             messages.append({"role": "assistant", "content": h.bot_response})
         messages.append({"role": "user", "content": user_message})
 
-        # Chamar API
-        if OPENROUTER_API_KEY:
-            bot_response = chat_com_openrouter(messages)
-        else:
-            bot_response = "API key não configurada"
+        # Chamar LLaMA local
+        bot_response = chat_com_llama_local(messages)
 
         # Salvar no banco
         chat_entry = Chat(user_message=user_message, bot_response=bot_response)
