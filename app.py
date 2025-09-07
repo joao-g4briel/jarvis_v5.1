@@ -11,7 +11,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
-# URL do servidor LLaMA local (substitua pelo IP real da sua VPS)
+# URL do servidor LLaMA local
 LLAMA_URL = "http://141.148.138.218:8081/completion"
 
 def chat_com_llama_local(messages):
@@ -29,11 +29,15 @@ def chat_com_llama_local(messages):
     }
     
     try:
-        response = requests.post(LLAMA_URL, headers=headers, json=payload, timeout=120)
+        response = requests.post(LLAMA_URL, headers=headers, json=payload, timeout=300)
         response.raise_for_status()
         return response.json()["content"]
+    except requests.exceptions.ConnectionError as e:
+        return f"Erro de conexão ao chamar LLaMA local: {str(e)}"
+    except requests.exceptions.Timeout as e:
+        return f"Timeout ao chamar LLaMA local: {str(e)}"
     except Exception as e:
-        return f"Erro ao chamar LLaMA local: {str(e)}"
+        return f"Erro desconhecido ao chamar LLaMA local: {str(e)}"
 
 def formatar_prompt_mistral(messages):
     """Formata mensagens no formato do Mistral"""
