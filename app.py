@@ -1,5 +1,6 @@
 import requests
 import json
+import os
 from flask import Flask, render_template, request, jsonify
 from models import db, Chat
 from config import DATABASE_URL
